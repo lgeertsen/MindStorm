@@ -1,5 +1,20 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const {app, BrowserWindow, ipcMain} = require('electron')
+const {PythonShell} = require('python-shell')
+
+var unity;
+
+var io = require('socket.io')();
+io.on('connection', function(socket){
+  unity = socket;
+
+  console.log("unity connected");
+
+  socket.on('disconnect', function(){
+    console.log('unity disconnected');
+  });
+});
+io.listen(3000);
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -13,7 +28,9 @@ function createWindow () {
   mainWindow.loadFile('index.html')
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools()
+
+  mainWindow.maximize()
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
@@ -23,6 +40,28 @@ function createWindow () {
     mainWindow = null
   })
 }
+
+ipcMain.on('executeScript', (event) => {
+  // secondWindow.webContents.send('createTables', data)
+  console.log("--Execute Script--")
+
+  let pyshell = new PythonShell('test.py')
+  pyshell.on('message', function (message) {
+    values = message.split(" ");
+    // received a message sent from the Python script (a simple "print" statement)
+
+    let type = values[0];
+    values.shift()
+
+    let data = {message: values.join(" ")};
+
+    if(unity) {
+      unity.emit(type, data)
+      console.log(type + " send to unity");
+    }
+  });
+
+})
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
