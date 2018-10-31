@@ -2,21 +2,252 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>Hello World!</title>
+    <title>Mind Storm</title>
+    <link href="bootstrap.min.css" type="text/css" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.2/css/all.css" integrity="sha384-/rXc/GQVaYpyDdyxK+ecHPVYJSN9bmVFBvjA/9eOB+pb3F2w2N6fc5qB9Ew5yIns" crossorigin="anonymous">
+    <link href="style.css" type="text/css" rel="stylesheet">
   </head>
   <body>
-    <h1>Hello World!</h1>
-    <!-- All of the Node.js APIs are available in this renderer process. -->
-    <button id="execute" onclick="executeScript()">Execute python script and send message to unity</button>
+    <!-- <h1>Hello World!</h1>
+    <button id="execute" onclick="executeScript()">Execute python script and send message to unity</button> -->
+    <div id="bubble" class="bg-danger" onmousedown="bubbleMouseDown()">
+      <i class="far fa-edit"></i>
+    </div>
 
+    <div id="editorContainer">
+      <div id="arrow"></div>
+      <div id="container">
+        <div id="menu">
+          <button class="btn btn-outline-info" onclick="openFile()">Open file</button>
+          <button class="btn btn-outline-success" onclick="saveFile()">Save file</button>
+          <button class="btn btn-outline-dark" onclick="launchSimulator()">Launch Simulator</button>
+          <button class="btn btn-outline-danger" onclick="executeScript()">Execute</button>
+          <button class="btn btn-secondary" onclick="">Exit</button>
+        </div>
+        <div id="editor"></div>
+        <!-- <div id="game"></div> -->
+      </div>
+    </div>
+
+    <script src="./src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
     <script>
       // You can also require other files to run in this process
       require('./renderer.js')
-      const { ipcRenderer } = require('electron');
+      const electron = require('electron');
+      const { remote, ipcRenderer } = require('electron');
+      const fs = require('fs');
+
+      var openFilepath = null;
+      var open = false;
+      var closeEditor = false;
+      var showContainer = false;
+      var position = [0,0];
+      var mouseDown = false;
+      var moved = false;
+      var animate = false;
+      var bubblePosition = [0, 0, 0, 0];
+
+      var win = remote.getCurrentWindow();
+      // win.on('blur', () => {
+      //   let el = document.querySelector('#bubble')
+      //   el.style.left = "0px";
+      //   closeEditor = true;
+      //   let editorContainer = document.querySelector('#editorContainer');
+      //   editorContainer.className = "";
+      //   showContainer = false;
+      //   let container = document.querySelector('#container');
+      //   container.className = "";
+      //   setTimeout(() => {
+      //     open = false;
+      //     el.className = "bg-danger";
+      //     win.setBounds({x: position[0], y: position[1], width: 50, height: 50});
+      //   }, 500);
+      // });
+
+      function bubbleMouseDown() {
+        if(!e) {
+          var e = window.event;
+        }
+        let pos = bubblePosition;
+        pos[2] = e.clientX;
+        pos[3] = e.clientY;
+        mouseDown = true;
+        bubblePosition = pos;
+        document.onmouseup = (e) => bubbleMouseUp(e);
+        document.onmousemove = (e) => bubbleMouseMove(e);
+      }
+
+      function bubbleMouseUp(e) {
+        document.onmouseup = null;
+        document.onmousemove = null;
+        if(!e) {
+          var e = window.event;
+        }
+        if(moved) {
+          mouseDown = false;
+          moved = false;
+          animate = true;
+
+          let el = document.querySelector('#bubble');
+          el.className = "bg-danger animate";
+
+          let top = el.style.top.split("px")[0];
+          let left = el.style.left.split("px")[0];
+          let right = window.innerWidth - left - 50;
+
+          if(left <= right) {
+            left = 0;
+          } else {
+            left = window.innerWidth - 50;
+          }
+          if(top < 0) {
+            top = 0;
+          }
+
+          el.style.top = top + "px";
+          el.style.left = left + "px";
+
+          let w = remote.getCurrentWindow();
+          setTimeout(() => {
+            animate = false;
+            el.className = "bg-danger";
+            el.style.top = '0px';
+            el.style.left = '0px';
+            w.setBounds({x: parseInt(left), y: parseInt(top), width: 50, height: 50});
+            position = w.getPosition();
+          }, 500);
+        } else {
+          mouseDown = false;
+          moved = false;
+          toggleEditor();
+        }
+      }
+
+      function bubbleMouseMove(e) {
+        if(!e) {
+          var e = window.event;
+        }
+        if(mouseDown) {
+          let width = electron.screen.getPrimaryDisplay().workAreaSize.width;
+          let height = electron.screen.getPrimaryDisplay().workAreaSize.height;
+          let w = remote.getCurrentWindow();
+          moved = true
+          w.setBounds({x: 0, y: 0, width: width, height: height});
+          let pos = bubblePosition;
+          pos[0] = pos[2] - e.clientX;
+          pos[1] = pos[3] - e.clientY;
+          pos[2] = e.clientX;
+          pos[3] = e.clientY;
+          bubblePosition = pos;
+          // set the element's new position:
+          let el = document.querySelector('#bubble')
+          el.style.top = (el.offsetTop - pos[1]) + "px";
+          el.style.left = (el.offsetLeft - pos[0]) + "px";
+        }
+      }
+
+      function toggleEditor() {
+        let win = remote.getCurrentWindow();
+        if(!open) {
+          let width = electron.screen.getPrimaryDisplay().workAreaSize.width;
+          let height = electron.screen.getPrimaryDisplay().workAreaSize.height;
+          let p = win.getPosition();
+          position = p;
+          open = true;
+          let el = document.querySelector('#bubble');
+          el.className = "bg-danger animate";
+          closeEditor = false;
+          let editorContainer = document.querySelector('#editorContainer');
+          editorContainer.className = "open";
+          setTimeout(() => {
+            showContainer: true;
+            let container = document.querySelector('#container');
+            container.className = "show";
+          }, 450);
+          let w,h;
+          if(p[0] == 0) {
+            w = 0;
+          } else {
+            w = width - 700;
+          }
+          if(p[1] + 600 < height) {
+            h = p[1];
+          } else {
+            h = height - 600;
+          }
+          el.style.left = "10px";
+          win.setBounds({x: w, y: h, width: 700, height: 600});
+        } else {
+          let el = document.querySelector('#bubble')
+          el.style.left = "0px";
+          closeEditor = true;
+          let editorContainer = document.querySelector('#editorContainer');
+          editorContainer.className = "";
+          showContainer = false;
+          let container = document.querySelector('#container');
+          container.className = "";
+          setTimeout(() => {
+            open = false;
+            el.className = "bg-danger";
+            win.setBounds({x: position[0], y: position[1], width: 50, height: 50});
+          }, 500);
+        }
+      }
+
+
+
+      var editor = ace.edit("editor");
+      editor.setTheme("ace/theme/monokai");
+      editor.session.setMode("ace/mode/python");
+      editor.setFontSize(16);
+
+      ipcRenderer.on('openFile', (event) => {
+        openFile();
+      });
+      ipcRenderer.on('saveFile', (event) => {
+        saveFile();
+      });
+
+      var launchSimulator = function() {
+        console.log("Launch Simulator");
+        ipcRenderer.send('launchSimulator');
+      }
 
       var executeScript = function() {
-        console.log("Execute Script");
-        ipcRenderer.send('executeScript');
+        if(openFilepath) {
+          console.log("Execute Script");
+          ipcRenderer.send('executeScript');
+        }
+      }
+
+      var openFile = function() {
+        remote.dialog.showOpenDialog({ filters: [
+           { name: 'python', extensions: ['py'] }
+         ]}, (fileNames) => {
+          // fileNames is an array that contains all the selected
+          if(fileNames === undefined){
+              return;
+          }
+          openFilepath = fileNames[0];
+
+          fs.readFile(openFilepath, 'utf-8', (err, data) => {
+            if(err){
+                alert("An error ocurred reading the file :" + err.message);
+                openFilepath = null;
+                return;
+            }
+            editor.getSession().setValue(data);
+            ipcRenderer.send('openFile', openFilepath);
+          });
+        });
+      }
+
+      var saveFile = function() {
+        const data = new Uint8Array(Buffer.from(editor.getValue()));
+        fs.writeFile(openFilepath, data, (err) => {
+          if (err) throw err;
+          console.log('The file has been saved!');
+        });
       }
 
     </script>

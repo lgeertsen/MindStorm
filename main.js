@@ -1,8 +1,11 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, ipcMain} = require('electron')
+const {app, BrowserWindow, ipcMain, Menu, MenuItem} = require('electron')
+const childProcess = require('child_process').execFile;
 const {PythonShell} = require('python-shell')
 
 var unity;
+var filePath = null;
+var pyshell = null;
 
 var io = require('socket.io')();
 io.on('connection', function(socket){
@@ -13,6 +16,10 @@ io.on('connection', function(socket){
   socket.on('disconnect', function(){
     console.log('unity disconnected');
   });
+
+  socket.on("EndRotation", function() {
+    pyshell.send('continue');
+  });
 });
 io.listen(3000);
 
@@ -20,9 +27,20 @@ io.listen(3000);
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
 
+const menu = new Menu()
+
 function createWindow () {
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: 800, height: 600})
+  mainWindow = new BrowserWindow({
+    width: 50,
+    height: 50,
+    x: 0,
+    y: 0,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false
+  })
 
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')
@@ -30,7 +48,7 @@ function createWindow () {
   // Open the DevTools.
   mainWindow.webContents.openDevTools()
 
-  mainWindow.maximize()
+  // mainWindow.maximize()
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
@@ -39,28 +57,84 @@ function createWindow () {
     // when you should delete the corresponding element.
     mainWindow = null
   })
+
+  menu.append(new MenuItem({
+    label: "Open File",
+    accelerator: 'Ctrl+O',
+    click: () => {
+      mainWindow.webContents.send('openFile')
+    }
+  }))
+
+  menu.append(new MenuItem({
+    label: "Save File",
+    accelerator: 'Ctrl+S',
+    click: () => {
+      if(filePath) {
+        console.log("Save file: " + filePath);
+        mainWindow.webContents.send('saveFile')
+      }
+    }
+  }))
+
+  menu.append(new MenuItem({
+    label: "Launch Simulator",
+    accelerator: 'Ctrl+P',
+    click: () => {
+      console.log("Launch Simulator");
+      childProcess("game/RobotSimulator.exe", function(err, data) {
+        if(err){
+           console.error(err);
+           return;
+        }
+      });
+    }
+  }))
+
+  Menu.setApplicationMenu(menu)
 }
 
-ipcMain.on('executeScript', (event) => {
-  // secondWindow.webContents.send('createTables', data)
-  console.log("--Execute Script--")
+ipcMain.on('openFile', (event, path) => {
+  console.log("File opened: " + path);
+  filePath = path;
+})
 
-  let pyshell = new PythonShell('test.py')
-  pyshell.on('message', function (message) {
-    values = message.split(" ");
-    // received a message sent from the Python script (a simple "print" statement)
-
-    let type = values[0];
-    values.shift()
-
-    let data = {message: values.join(" ")};
-
-    if(unity) {
-      unity.emit(type, data)
-      console.log(type + " send to unity");
+ipcMain.on('launchSimulator', (event) => {
+  console.log("Launch Simulator");
+  childProcess("game/RobotSimulator.exe", function(err, data) {
+    if(err){
+       console.error(err);
+       return;
     }
   });
+})
 
+ipcMain.on('executeScript', (event) => {
+  console.log("--Execute Script--")
+
+  pyshell = new PythonShell(filePath)
+  pyshell.on('message', function (message) {
+    if(message != 'wait') {
+      values = message.split(" ");
+      // received a message sent from the Python script (a simple "print" statement)
+
+      let type = values[0];
+      values.shift()
+
+      let data = null;
+
+      if(type == "message") {
+        data = {message: values.join(" ")};
+      } else {
+        data = {angle: values[0]}
+      }
+      console.log(type + " send to unity");
+
+      if(unity) {
+        unity.emit(type, data)
+      }
+    }
+  });
 })
 
 // This method will be called when Electron has finished

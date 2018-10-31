@@ -1,0 +1,111 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+  overflow: hidden;
+}
+
+#bubble {
+  z-index: 1000;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* background: #e74c3c; */
+  border-radius: 50%;
+  /* -webkit-app-region: drag; */
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  cursor: pointer;
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+#bubble.animate {
+  transition: all .5s ease;
+}
+
+#bubble i {
+  font-size: 25px;
+}
+
+#editorContainer {
+  position: absolute;
+  left: 3px;
+  top: 15px;
+  width: 0px;
+  height: 0px;
+  background: #fff;
+  border-radius: 3px;
+  border-top-right-radius: 50%;
+  border-bottom-left-radius: 50%;
+  border-bottom-right-radius: 50%;
+  /* opacity: 0; */
+  transition: left .5s ease, top .5s ease, width .5s ease, height .5s ease, border-radius .2s ease .2s;
+  opacity: 0.95;
+}
+#editorContainer * {
+  display: none;
+  opacity: 0.95;
+}
+#editorContainer.open {
+  left: 10px;
+  top: 57px;
+  width: 680px;
+  height: 538px;
+  background: #fff;
+  border-radius: 3px;
+  /* opacity: 1; */
+  box-shadow: 0 1px 10px rgba(0,0,0,0.8);
+  transition: left .5s ease, top .5s ease, width .5s ease, height .5s ease, border-radius .4s ease;
+}
+#editorContainer.open * {
+  display: block;
+}
+
+#arrow {
+  z-index: 100;
+  position: absolute;
+  top: -8px;
+  left: 15px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid #fff;
+}
+
+#container {
+  overflow: hidden;
+  width: 680px;
+  height: 538px;
+  opacity: 0;
+  transition: opacity .2s ease;
+  display: flex;
+}
+#container.show {
+  opacity: 1;
+  display: flex;
+}
+
+#menu {
+  flex: 1;
+}
+
+#menu .btn {
+  display: block;
+  width: 100%;
+  border-radius: 0;
+}
+
+#editor {
+  width: 600px;
+  height: 538px;
+}
+
+#editor .ace_line * {
+  display: inline-block;
+}
