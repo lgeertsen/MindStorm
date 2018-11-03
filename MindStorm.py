@@ -1,7 +1,31 @@
 import sys
 
-def move(distance):
-    print("Move " + str(distance))
+def move_forward(distance):
+    print("MoveForward " + str(distance))
+
+def move_back(distance):
+    print("MoveBack " + str(distance))
+
+def move_left(distance):
+    print("MoveLeft " + str(distance))
+
+def move_right(distance):
+    print("MoveRight " + str(distance))
+
+def rotate_head(x, y, z):
+    print("RotateHead " + str(x) + " " + str(y)+ " " + str(z))
+
+def rotate_left_shoulder(x, y):
+    print("RotateLeftShoulder " + str(x) + " " + str(y))
+
+def rotate_right_shoulder(x, y):
+    print("RotateRightShoulder " + str(x) + " " + str(y))
+
+def rotate_left_forearm(x):
+    print("RotateLeftForearm " + str(x))
+
+def rotate_left_thigh(x, y):
+    print("RotateLeftThigh " + str(x) + " " + str(y))
 
 def rotate_left_thigh_z(angle):
     print("RotateLeftThigh " + str(angle))

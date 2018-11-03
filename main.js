@@ -125,16 +125,27 @@ ipcMain.on('executeScript', (event) => {
 
       if(type == "message") {
         data = {message: values.join(" ")};
+      } else if(values.length == 3) {
+        data = {x: values[0], y: values[1], z: values[2]}
+      } else if(values.length == 2) {
+        data = {x: values[0], y: values[1]}
       } else {
         data = {angle: values[0]}
       }
-      console.log(type + " send to unity");
+      console.log(type + " send to unity --- ");
 
       if(unity) {
         unity.emit(type, data)
       }
     }
   });
+})
+
+ipcMain.on('restartLevel', (event) => {
+  console.log("--Restart Level--");
+  if(unity) {
+    unity.emit('RestartLevel')
+  }
 })
 
 // This method will be called when Electron has finished

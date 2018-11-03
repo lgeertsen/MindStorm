@@ -22,6 +22,7 @@
           <button class="btn btn-outline-success" onclick="saveFile()">Save file</button>
           <button class="btn btn-outline-dark" onclick="launchSimulator()">Launch Simulator</button>
           <button class="btn btn-outline-danger" onclick="executeScript()">Execute</button>
+          <button class="btn btn-outline-warning" onclick="restartLevel()">Restart Level</button>
           <button class="btn btn-secondary" onclick="">Exit</button>
         </div>
         <div id="editor"></div>
@@ -218,6 +219,11 @@
           console.log("Execute Script");
           ipcRenderer.send('executeScript');
         }
+      }
+
+      var restartLevel = function() {
+        console.log("Restart Level");
+        ipcRenderer.send('restartLevel');
       }
 
       var openFile = function() {
