@@ -4,14 +4,22 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "build -w"
+  },
+  "build": {
+    "productName": "Mind Storm",
+    "extraResources": [
+      "game"
+    ]
   },
   "repository": "",
   "keywords": [],
   "author": "",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^3.0.4"
+    "electron": "^3.0.4",
+    "electron-builder": "^20.31.2"
   },
   "dependencies": {
     "python-shell": "^1.0.6",

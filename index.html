@@ -23,7 +23,7 @@
           <button class="btn btn-outline-dark" onclick="launchSimulator()">Launch Simulator</button>
           <button class="btn btn-outline-danger" onclick="executeScript()">Execute</button>
           <button class="btn btn-outline-warning" onclick="restartLevel()">Restart Level</button>
-          <button class="btn btn-secondary" onclick="">Exit</button>
+          <button class="btn btn-secondary" onclick="closeWindow()">Exit</button>
         </div>
         <div id="editor"></div>
         <!-- <div id="game"></div> -->
@@ -49,21 +49,21 @@
       var bubblePosition = [0, 0, 0, 0];
 
       var win = remote.getCurrentWindow();
-      // win.on('blur', () => {
-      //   let el = document.querySelector('#bubble')
-      //   el.style.left = "0px";
-      //   closeEditor = true;
-      //   let editorContainer = document.querySelector('#editorContainer');
-      //   editorContainer.className = "";
-      //   showContainer = false;
-      //   let container = document.querySelector('#container');
-      //   container.className = "";
-      //   setTimeout(() => {
-      //     open = false;
-      //     el.className = "bg-danger";
-      //     win.setBounds({x: position[0], y: position[1], width: 50, height: 50});
-      //   }, 500);
-      // });
+      win.on('blur', () => {
+        let el = document.querySelector('#bubble')
+        el.style.left = "0px";
+        closeEditor = true;
+        let editorContainer = document.querySelector('#editorContainer');
+        editorContainer.className = "";
+        showContainer = false;
+        let container = document.querySelector('#container');
+        container.className = "";
+        setTimeout(() => {
+          open = false;
+          el.className = "bg-danger";
+          win.setBounds({x: position[0], y: position[1], width: 50, height: 50});
+        }, 500);
+      });
 
       function bubbleMouseDown() {
         if(!e) {
@@ -208,6 +208,12 @@
       ipcRenderer.on('saveFile', (event) => {
         saveFile();
       });
+      ipcRenderer.on('launchError', (event, err) => {
+        console.log(err);
+      });
+      ipcRenderer.on('toggleEditor', (event) => {
+        toggleEditor();
+      })
 
       var launchSimulator = function() {
         console.log("Launch Simulator");
@@ -254,6 +260,10 @@
           if (err) throw err;
           console.log('The file has been saved!');
         });
+      }
+
+      var closeWindow = function() {
+        win.close();
       }
 
     </script>

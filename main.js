@@ -1,7 +1,8 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, ipcMain, Menu, MenuItem} = require('electron')
+const {app, BrowserWindow, ipcMain, Menu, MenuItem, globalShortcut} = require('electron')
 const childProcess = require('child_process').execFile;
 const {PythonShell} = require('python-shell')
+const path = require('path');
 
 var unity;
 var filePath = null;
@@ -46,7 +47,7 @@ function createWindow () {
   mainWindow.loadFile('index.html')
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools()
+  // mainWindow.webContents.openDevTools()
 
   // mainWindow.maximize()
 
@@ -79,7 +80,7 @@ function createWindow () {
 
   menu.append(new MenuItem({
     label: "Launch Simulator",
-    accelerator: 'Ctrl+P',
+    accelerator: 'Ctrl+L',
     click: () => {
       console.log("Launch Simulator");
       childProcess("game/RobotSimulator.exe", function(err, data) {
@@ -92,6 +93,10 @@ function createWindow () {
   }))
 
   Menu.setApplicationMenu(menu)
+
+  const ret = globalShortcut.register('Ctrl+Alt+E', () => {
+    mainWindow.webContents.send('toggleEditor')
+  })
 }
 
 ipcMain.on('openFile', (event, path) => {
@@ -101,9 +106,11 @@ ipcMain.on('openFile', (event, path) => {
 
 ipcMain.on('launchSimulator', (event) => {
   console.log("Launch Simulator");
-  childProcess("game/RobotSimulator.exe", function(err, data) {
+  let p = path.join(__dirname, '..\\game\\RobotSimulator.exe');
+  childProcess(p, function(err, data) {
     if(err){
        console.error(err);
+       mainWindow.webContents.send("launchError" , p);
        return;
     }
   });
@@ -114,14 +121,16 @@ ipcMain.on('executeScript', (event) => {
 
   pyshell = new PythonShell(filePath)
   pyshell.on('message', function (message) {
-    if(message != 'wait') {
-      values = message.split(" ");
+    let lol = message.split(" ");
+    if(lol[0] != 'wait') {
+      let values = message.split(" ");
       // received a message sent from the Python script (a simple "print" statement)
 
       let type = values[0];
       values.shift()
 
       let data = null;
+
 
       if(type == "message") {
         data = {message: values.join(" ")};
@@ -130,13 +139,21 @@ ipcMain.on('executeScript', (event) => {
       } else if(values.length == 2) {
         data = {x: values[0], y: values[1]}
       } else {
-        data = {angle: values[0]}
+        data = {x: values[0]}
       }
       console.log(type + " send to unity --- ");
+      console.log(values);
 
       if(unity) {
         unity.emit(type, data)
       }
+    } else {
+      console.log("---- WAIT ----");
+      var data = message.split(" ");
+      setTimeout(function() {
+        pyshell.send('continue');
+        console.log("-- CONTINUE --");
+      }, data[1] * 1000);
     }
   });
 })

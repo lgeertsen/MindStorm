@@ -1,0 +1,7 @@
+directories:
+  output: dist
+  buildResources: build
+productName: Mind Storm
+extraResources:
+  - game
+electronVersion: 3.0.7
